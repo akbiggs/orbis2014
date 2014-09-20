@@ -27,7 +27,8 @@ public class PlayerAI implements Player {
 	public PlayerAction getMove(TronGameBoard map,
 			LightCycle playerCycle, LightCycle opponentCycle, int moveNumber) {
 		
-		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
+//		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
+		ValueGrid grid = new ValueGrid(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
 		
 		AStarPathFinder pathFinder = new AStarPathFinder(searchMap, 5, false);
