@@ -31,7 +31,7 @@ public class PlayerAI implements Player {
 		ValueGrid grid = new ValueGrid(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
 		
-		AStarPathFinder pathFinder = new AStarPathFinder(searchMap, 30, false);
+		AStarPathFinder pathFinder = new AStarPathFinder(grid, 30, false);
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, 1, 1);
 		
