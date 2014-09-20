@@ -1,5 +1,9 @@
 import java.util.Random;
 
+import path.finding.stuff.AStarPathFinder;
+import path.finding.stuff.Path;
+import path.finding.stuff.Path.Step;
+
 import com.orbischallenge.tron.api.PlayerAction;
 import com.orbischallenge.tron.client.api.LightCycle;
 import com.orbischallenge.tron.client.api.TronGameBoard;
@@ -10,14 +14,11 @@ import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class PlayerAI implements Player {
 	
-	private Random randomMovePicker;
-	private int randMove;
 
 	@Override
 	public void newGame(TronGameBoard map,  
 			LightCycle playerCycle, LightCycle opponentCycle) {
 		
-		randomMovePicker = new Random();
 		return;
 		
 	}
@@ -26,16 +27,23 @@ public class PlayerAI implements Player {
 	public PlayerAction getMove(TronGameBoard map,
 			LightCycle playerCycle, LightCycle opponentCycle, int moveNumber) {
 		
-		randMove = randomMovePicker.nextInt(5);
-		if(randMove == 0){
-			return PlayerAction.SAME_DIRECTION;
-		}else if(randMove == 1){
+		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
+		SearchablePlayer searchPlayer = new SearchablePlayer();
+		
+		AStarPathFinder pathFinder = new AStarPathFinder(searchMap, 5, false);
+		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
+							playerCycle.getPosition().y, 1, 1);
+		
+		Step firstStep = path.getStep(0);
+		System.out.println("Step taken: " +  firstStep);
+		
+		if (firstStep.getX() > 0) {
 			return PlayerAction.MOVE_RIGHT;
-		}else if(randMove == 2){
+		}else if(firstStep.getY() < 0){
 			return PlayerAction.MOVE_UP;
-		}else if(randMove == 3){
+		}else if (firstStep.getX() < 0){
 			return PlayerAction.MOVE_LEFT;
-		}else if(randMove == 4){
+		}else  if (firstStep.getY() > 0){
 			return PlayerAction.MOVE_DOWN;
 		}
 		
