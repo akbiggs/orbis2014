@@ -30,7 +30,7 @@ public class PlayerAI implements Player {
 		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
 		
-		AStarPathFinder pathFinder = new AStarPathFinder(searchMap, 5, false);
+		AStarPathFinder pathFinder = new AStarPathFinder(searchMap, 30, false);
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, 1, 1);
 		
