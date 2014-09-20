@@ -91,6 +91,20 @@ public class Path {
 		return steps.contains(new Step(x,y));
 	}
 	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("(");
+		for (int i = 0; i < this.getLength(); i++) {
+			Step step = this.getStep(i);
+			sb.append(step);
+			sb.append(", ");
+		}
+		sb.append(")");
+		
+		return sb.toString();
+	}
+	
 	/**
 	 * A single step within the path
 	 * 

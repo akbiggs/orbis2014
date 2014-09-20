@@ -35,15 +35,17 @@ public class PlayerAI implements Player {
 							playerCycle.getPosition().y, 1, 1);
 		
 		Step firstStep = path.getStep(0);
-		System.out.println("Step taken: " +  firstStep);
 		
-		if (firstStep.getX() > 0) {
+		int xDiff = firstStep.getX() - playerCycle.getPosition().x;
+		int yDiff = firstStep.getY() - playerCycle.getPosition().y;
+		
+		if (xDiff > 0) {
 			return PlayerAction.MOVE_RIGHT;
-		}else if(firstStep.getY() < 0){
+		} else if(yDiff < 0) {
 			return PlayerAction.MOVE_UP;
-		}else if (firstStep.getX() < 0){
+		} else if (xDiff < 0) {
 			return PlayerAction.MOVE_LEFT;
-		}else  if (firstStep.getY() > 0){
+		} else  if (yDiff > 0) {
 			return PlayerAction.MOVE_DOWN;
 		}
 		
