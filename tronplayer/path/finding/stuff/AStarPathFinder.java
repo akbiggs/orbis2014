@@ -86,10 +86,10 @@ public class AStarPathFinder implements PathFinder {
 		int maxDepth = 0;
 		while ((maxDepth < maxSearchDistance) && (open.size() != 0)) {
 			// pull out the first node in our open list, this is determined to 
-
 			// be the most likely to be the next step based on our heuristic
 
 			Node current = getFirstInOpen();
+			
 			if (current == nodes[tx][ty]) {
 				break;
 			}
@@ -160,7 +160,8 @@ public class AStarPathFinder implements PathFinder {
 						if (!inOpenList(neighbour) && !(inClosedList(neighbour))) {
 							neighbour.cost = nextStepCost;
 							neighbour.heuristic = getHeuristicCost(mover, xp, yp, tx, ty);
-							maxDepth = Math.max(maxDepth, neighbour.setParent(current));
+							int depth = neighbour.setParent(current);
+							maxDepth = Math.max(maxDepth, depth);
 							addToOpen(neighbour);
 						}
 					}
@@ -430,6 +431,11 @@ public class AStarPathFinder implements PathFinder {
 			} else {
 				return 0;
 			}
+		}
+		
+		@Override
+		public String toString() {
+			return "Node: [" + this.x + ", " + this.y + "]";
 		}
 	}
 }
