@@ -98,7 +98,7 @@ public class ValueGrid implements TileBasedMap {
 
 	@Override
 	public boolean blocked(Mover mover, int x, int y) {
-		return at(y, x) == 0;
+		return at(x, y) == 0;
 	}
 
 	@Override

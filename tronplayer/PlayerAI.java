@@ -35,8 +35,8 @@ public class PlayerAI implements Player {
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, 1, 1);
 		
-		Step firstStep = path.getStep(0);
-		
+		Step firstStep = path.getStep(1);
+			
 		int xDiff = firstStep.getX() - playerCycle.getPosition().x;
 		int yDiff = firstStep.getY() - playerCycle.getPosition().y;
 		
