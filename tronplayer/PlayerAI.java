@@ -27,15 +27,16 @@ public class PlayerAI implements Player {
 	public PlayerAction getMove(TronGameBoard map,
 			LightCycle playerCycle, LightCycle opponentCycle, int moveNumber) {
 		
-		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
+//		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
+		ValueGrid grid = new ValueGrid(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
 		
-		AStarPathFinder pathFinder = new AStarPathFinder(searchMap, 30, false);
+		AStarPathFinder pathFinder = new AStarPathFinder(grid, 30, false);
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, 1, 1);
 		
-		Step firstStep = path.getStep(0);
-		
+		Step firstStep = path.getStep(1);
+			
 		int xDiff = firstStep.getX() - playerCycle.getPosition().x;
 		int yDiff = firstStep.getY() - playerCycle.getPosition().y;
 		

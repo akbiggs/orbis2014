@@ -1,17 +1,22 @@
 import java.awt.Point;
 import java.util.Arrays;
 
+import path.finding.stuff.Mover;
+import path.finding.stuff.TileBasedMap;
+
 import com.orbischallenge.tron.client.api.LightCycle;
 import com.orbischallenge.tron.client.api.TileTypeEnum;
 import com.orbischallenge.tron.client.api.TronGameBoard;
 
-public class ValueGrid {
+public class ValueGrid implements TileBasedMap {
 
 	int[][] grid;
+	boolean[][] visited;
 	
 	public ValueGrid(TronGameBoard board, LightCycle player, LightCycle opponent) {
 		int l = board.length();
 		grid = new int[l][l];
+		visited = new boolean[l][l];
 		
 		for (int i = 0; i < l; i++) {
 			Arrays.fill(grid[i], -1);
@@ -21,7 +26,7 @@ public class ValueGrid {
 			for (int j = 0; j < l; j++) {
 				TileTypeEnum posType = board.tileType(i, j);
 				
-				if (at(i, j) != -1)
+				if (at(i, j) != -1)	
 					continue;
 				
 				if (posType == TileTypeEnum.WALL || posType == TileTypeEnum.LIGHTCYCLE
@@ -72,5 +77,33 @@ public class ValueGrid {
 		}
 		
 		return result.toString();
+	}
+
+	@Override
+	public int getWidthInTiles() {
+		return grid.length;
+	}
+
+	@Override
+	public int getHeightInTiles() {
+		// TODO Auto-generated method stub
+		return grid.length;
+	}
+
+	@Override
+	public void pathFinderVisited(int x, int y) {
+		// TODO Auto-generated method stub
+		visited[x][y] = true;
+	}
+
+	@Override
+	public boolean blocked(Mover mover, int x, int y) {
+		return at(x, y) == 0;
+	}
+
+	@Override
+	public float getCost(Mover mover, int sx, int sy, int tx, int ty) {
+		// TODO Auto-generated method stub
+		return 1;
 	}
 }
