@@ -11,11 +11,16 @@ class PlayerAI():
 
 	def get_move(self, game_map, player_lightcycle, opponent_lightcycle, moveNumber):
 
+    # 1. avoid dying
+    # 2. minimize the amount of space the opponent has available to them
+    # until we're disconnected
+    # 3. maximize time spent cycling around before dying
+
 		my_position = player_lightcycle['position']
 		my_x = my_position[0]
 		my_y = my_position[1]
 		my_direction = player_lightcycle['direction']
-		
+
 		randMove = random.randint(0, 3)
 		if randMove == 0:
 			return PlayerActions.MOVE_LEFT
