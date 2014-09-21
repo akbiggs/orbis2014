@@ -117,6 +117,8 @@ public class PlayerAI implements Player {
 				break;
 			}
 			
+			if (Math.abs(playerCycle.getPosition().x - p.x) + Math.abs(playerCycle.getPosition().y - p.y) == 1)
+				return null;
 			return p;
 		} else {
 			return null;
