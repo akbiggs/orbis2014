@@ -1,3 +1,4 @@
+import java.awt.Point;
 import java.util.Random;
 
 import path.finding.stuff.AStarPathFinder;
@@ -32,13 +33,16 @@ public class PlayerAI implements Player {
 		SearchablePlayer searchPlayer = new SearchablePlayer();
 		
 		AStarPathFinder pathFinder = new AStarPathFinder(grid, 30, false);
+		Point target = grid.getBestPosition();
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
-							playerCycle.getPosition().y, 1, 1);
+							playerCycle.getPosition().y, target.x, target.y);
 		
 		Step firstStep = path.getStep(1);
 			
 		int xDiff = firstStep.getX() - playerCycle.getPosition().x;
 		int yDiff = firstStep.getY() - playerCycle.getPosition().y;
+		
+		System.out.println(grid);
 		
 		if (xDiff > 0) {
 			return PlayerAction.MOVE_RIGHT;

@@ -1,5 +1,7 @@
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import path.finding.stuff.Mover;
 import path.finding.stuff.TileBasedMap;
@@ -46,6 +48,68 @@ public class ValueGrid implements TileBasedMap {
 				}
 			}
 		}
+		
+		List<Point> opponentAdjacents = adjacents(opponent.getPosition().x, opponent.getPosition().y);
+		List<Point> playerAdjacents = adjacents(player.getPosition().x, player.getPosition().y);
+
+		for (Point p1 : playerAdjacents) {
+			int worstSpotsOwned = l*l+1;
+			
+			for (Point p2 : opponentAdjacents) {
+				int spotsOwned = getNumberOfBeatableSpotsFrom(p1.x, p1.y, p2.x, p2.y);
+				
+				if (spotsOwned < worstSpotsOwned) {
+					worstSpotsOwned = spotsOwned;
+				}
+			}
+			
+			set(p1.x, p1.y, worstSpotsOwned);
+		}
+	}
+	
+	private List<Point> adjacents(int x, int y) {
+		List<Point> results = new ArrayList<Point>();
+		
+		if (at(x-1, y) != 0) {
+			results.add(new Point(x-1,y));
+		}
+		
+		if (at(x+1, y) != 0) {
+			results.add(new Point(x+1,y));
+		}
+		
+		if (at(x, y-1) != 0) {
+			results.add(new Point(x,y-1));
+		}
+		
+		if (at(x, y+1) != 0) {
+			results.add(new Point(x,y+1));
+		}
+		
+		return results;
+	}
+	
+	private int manhattenDistance(int x1, int y1, int x2, int y2) {
+		return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+	}
+	
+	private int getNumberOfBeatableSpotsFrom(int x, int y, int opponentX, int opponentY) {
+		int numBeatable = 0;
+		
+		for (int i = 0; i < grid.length; i++) {
+			for (int j = 0; j < grid.length; j++) {
+				if (at(i, j) == 0)
+					continue;
+				
+				int playerDistance = manhattenDistance(x, y, i, j);
+				int opponentDistance = manhattenDistance(opponentX, opponentY, i, j);
+				if (playerDistance < opponentDistance) {
+					numBeatable++;
+				}
+			}
+		}
+		
+		return numBeatable;
 	}
 	
 	public int at(int col, int row) {
@@ -78,6 +142,24 @@ public class ValueGrid implements TileBasedMap {
 		
 		return result.toString();
 	}
+	
+	public Point getBestPosition() {
+		int bestScore = -1;
+		int bestX = 0;
+		int bestY = 0;
+		
+		for (int i = 0; i < grid.length; i++) {
+			for (int j = 0; j < grid.length; j++) {
+				if (at(i, j) > bestScore) {
+					bestX = i;
+					bestY = j;
+					bestScore = at(i, j);
+				}
+			}
+		}
+		
+		return new Point(bestX, bestY);
+	}
 
 	@Override
 	public int getWidthInTiles() {
@@ -86,13 +168,11 @@ public class ValueGrid implements TileBasedMap {
 
 	@Override
 	public int getHeightInTiles() {
-		// TODO Auto-generated method stub
 		return grid.length;
 	}
 
 	@Override
 	public void pathFinderVisited(int x, int y) {
-		// TODO Auto-generated method stub
 		visited[x][y] = true;
 	}
 
