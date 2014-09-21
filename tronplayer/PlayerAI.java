@@ -31,14 +31,17 @@ public class PlayerAI implements Player {
 //		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchableMap grid = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
-		Point dest = grid.getDestination();
+		Point dest = opponentIntersect(grid, playerCycle, opponentCycle);
+		dest = (dest != null && !grid.blocked(null, dest.x, dest.y) && grid.percentageOfLevelFilled < 0.5) ? 
+				dest : grid.getDestination();
 		
-		AStarPathFinder pathFinder = new AStarPathFinder(grid, 30, false);
+		System.out.println("Grid " + grid);
+		
+		AStarPathFinder pathFinder = new AStarPathFinder(grid, 100, false);
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, dest.x, dest.y);
 		
-		//System.out.println("PATH: " + path);
-		//System.out.println("dest: " + dest);
+		
 		PlayerAction actionChosen = PlayerAction.SAME_DIRECTION;
 		if (path != null)
 		{
@@ -46,8 +49,6 @@ public class PlayerAI implements Player {
 			
 			int xDiff = firstStep.getX() - playerCycle.getPosition().x;
 			int yDiff = firstStep.getY() - playerCycle.getPosition().y;
-			
-			//System.out.println(grid);
 			
 			if (xDiff > 0) {
 				actionChosen = PlayerAction.MOVE_RIGHT;
@@ -58,11 +59,9 @@ public class PlayerAI implements Player {
 			} else  if (yDiff > 0) {
 				actionChosen = PlayerAction.MOVE_DOWN;
 			}
-			
-			//System.out.println("GOAL: " + dest);
-			//System.out.println("ACTION CHOSEN: " + actionChosen);
 		}
 		
+		System.out.println(actionChosen);
 		return actionChosen;
 	}
 	
@@ -90,7 +89,7 @@ public class PlayerAI implements Player {
 				break;
 			}
 			
-			return !map.blocked(null, p.x, p.y) ? p : null;
+			return p;
 		} else {
 			return null;
 		}
