@@ -14,7 +14,7 @@ import com.orbischallenge.tron.protocol.TronProtocol.PowerUpType;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class PlayerAI implements Player {
-	Point lastOpponentPosition;
+	Point lastOpponentPosition = new Point(-1, -1);
 	boolean opponentIsDead;
 	
 	@Override
@@ -35,6 +35,8 @@ public class PlayerAI implements Player {
 //		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchableMap grid = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
+		
+		checkIfOpponentIsDead(opponentCycle);
 		
 		//If the opponent is still alive and the game is not too progressed, head toward their head.
 		Point dest = opponentIntersect(grid, playerCycle, opponentCycle);
