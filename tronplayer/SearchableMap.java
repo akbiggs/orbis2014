@@ -12,17 +12,24 @@ import com.orbischallenge.tron.client.api.TronGameBoard;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
-	private static final int SEARCH_THRESHOLD = 6;
+	private static final int SEARCH_THRESHOLD = 4;
 	private static final int EMPTY_SPACE_WEIGHT = 1;
-	private static final int POWERUP_WEIGHT = 20;
+	private static final int POWERUP_WEIGHT = 500;
 
 	ValueMap map;
 	
+	TronGameBoard board;
+	
+	public double percentageOfLevelFilled;
+	
 	public SearchableMap(TronGameBoard board, LightCycle player, LightCycle opponent) {
-		map = new ValueMap(board);
+		this.map = new ValueMap(board);
+		this.board = board;
 		
 		int l = map.length();
 		
+		int numEmpties = 0;
+		int numFilled = 0;
 		for (int i = 0; i < l; i++) {
 			for (int j = 0; j < l; j++) {
 				TileTypeEnum posType = board.tileType(i, j);
@@ -57,7 +64,9 @@ public class SearchableMap implements TileBasedMap {
 		for (Point p1 : playerAdjacents) {
 			double estimatedValue = estimateValueOf(p1.x, p1.y);
 			if (aboutZero(estimatedValue)) {
-				map.setValue(p1.x, p1.y, 0);
+				//Should have some small change of getting to any adjacant tile
+				//no matter how bad it is.
+				map.setValue(p1.x, p1.y, 1);
 				continue;
 			}
 			
@@ -71,7 +80,10 @@ public class SearchableMap implements TileBasedMap {
 				}
 			}
 			
-			map.setValue(p1.x, p1.y, worstSpotsOwned + estimatedValue);
+			double finalValue = worstSpotsOwned + estimatedValue;
+			if ( aboutZero(finalValue) && !blocked(null, p1.x, p1.y) )
+				finalValue += 1;
+			map.setValue(p1.x, p1.y, finalValue);
 		}
 		
 		//Going straight should be worth more
@@ -101,19 +113,19 @@ public class SearchableMap implements TileBasedMap {
 	private List<Point> adjacents(int x, int y) {
 		List<Point> results = new ArrayList<Point>();
 		
-		if (map.valueAt(x-1, y) != 0) {
+		if (x > 0 && !blocked(null, x-1, y)) {
 			results.add(new Point(x-1,y));
 		}
 		
-		if (map.valueAt(x+1, y) != 0) {
+		if (x < board.length() - 1 && !blocked(null, x+1, y)) {
 			results.add(new Point(x+1,y));
 		}
 		
-		if (map.valueAt(x, y-1) != 0) {
+		if (y > 0 && !blocked(null, x, y - 1)) {
 			results.add(new Point(x,y-1));
 		}
 		
-		if (map.valueAt(x, y+1) != 0) {
+		if (y < board.length() - 1 && !blocked(null, x, y+1)) {
 			results.add(new Point(x,y+1));
 		}
 		
@@ -125,7 +137,10 @@ public class SearchableMap implements TileBasedMap {
 	}
 	
 	public double estimateValueOf(int x, int y) {
-		return estimateValueOf(x, y, SEARCH_THRESHOLD, new ArrayList<Point>());
+		double e = estimateValueOf(x, y, SEARCH_THRESHOLD, new ArrayList<Point>());
+		System.out.println("For (" + x + ", " + y + ") : " + e);
+		
+		return e;
 	}
 	
 	public double estimateValueOf(int x, int y, int threshold, List<Point> searched) {
@@ -213,6 +228,24 @@ public class SearchableMap implements TileBasedMap {
 		return new Point(bestX, bestY);
 	}
 
+	public Point getBestAdjacantPosTo(LightCycle player)
+	{
+		List<Point> adj = this.adjacents(player.getPosition().x, player.getPosition().y);
+		if (adj.isEmpty())
+			return player.getPosition();
+		
+		Point bestP = adj.get(0);
+		for (Point p : adj)
+		{
+			if (map.valueAt(p.x, p.y) > map.valueAt(bestP.x, bestP.y))
+			{
+				bestP = p;
+			}
+		}
+		
+		return bestP;
+	}
+	
 	@Override
 	public int getWidthInTiles() {
 		return map.length();
@@ -230,7 +263,9 @@ public class SearchableMap implements TileBasedMap {
 
 	@Override
 	public boolean blocked(Mover mover, int x, int y) {
-		return aboutZero(map.valueAt(x, y));
+		TileTypeEnum posType = board.tileType(x, y);
+		return posType == TileTypeEnum.WALL || posType == TileTypeEnum.LIGHTCYCLE
+				|| posType == TileTypeEnum.TRAIL;
 	}
 
 	@Override

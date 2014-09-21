@@ -14,7 +14,7 @@ import com.orbischallenge.tron.protocol.TronProtocol.PowerUpType;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class PlayerAI implements Player {
-	
+	Point lastPlayerPosition;
 
 	@Override
 	public void newGame(TronGameBoard map,  
@@ -31,9 +31,9 @@ public class PlayerAI implements Player {
 //		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchableMap grid = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
-		Point dest = opponentIntersect(grid, playerCycle, opponentCycle);
-		dest = (dest != null && !grid.blocked(null, dest.x, dest.y) && grid.percentageOfLevelFilled < 0.5) ? 
-				dest : grid.getDestination();
+		Point dest = grid.getDestination();//opponentIntersect(grid, playerCycle, opponentCycle);
+		//dest = (dest != null && !grid.blocked(null, dest.x, dest.y) && grid.percentageOfLevelFilled < 0.5) ? 
+		//		dest : grid.getDestination();
 		
 		System.out.println("Grid " + grid);
 		
@@ -42,23 +42,36 @@ public class PlayerAI implements Player {
 							playerCycle.getPosition().y, dest.x, dest.y);
 		
 		
-		PlayerAction actionChosen = PlayerAction.SAME_DIRECTION;
-		if (path != null)
+		//Where we want to move to
+		final int movetoX, movetoY;
+		
+		if (path == null)
+		{
+			Point bestDest = grid.getBestAdjacantPosTo(playerCycle);
+			movetoX = bestDest.x;
+			movetoY = bestDest.y;
+		}
+		else
 		{
 			Step firstStep = path.getStep(1);
-			
-			int xDiff = firstStep.getX() - playerCycle.getPosition().x;
-			int yDiff = firstStep.getY() - playerCycle.getPosition().y;
-			
-			if (xDiff > 0) {
-				actionChosen = PlayerAction.MOVE_RIGHT;
-			} else if(yDiff < 0) {
-				actionChosen = PlayerAction.MOVE_UP;
-			} else if (xDiff < 0) {
-				actionChosen = PlayerAction.MOVE_LEFT;
-			} else  if (yDiff > 0) {
-				actionChosen = PlayerAction.MOVE_DOWN;
-			}
+			movetoX = firstStep.getX();
+			movetoY = firstStep.getY();
+		}
+		
+		//Choose the action based on where we want to move to
+		PlayerAction actionChosen = PlayerAction.SAME_DIRECTION;
+
+		int xDiff = movetoX - playerCycle.getPosition().x;
+		int yDiff = movetoY - playerCycle.getPosition().y;
+		
+		if (xDiff > 0) {
+			actionChosen = PlayerAction.MOVE_RIGHT;
+		} else if(yDiff < 0) {
+			actionChosen = PlayerAction.MOVE_UP;
+		} else if (xDiff < 0) {
+			actionChosen = PlayerAction.MOVE_LEFT;
+		} else  if (yDiff > 0) {
+			actionChosen = PlayerAction.MOVE_DOWN;
 		}
 		
 		System.out.println(actionChosen);
