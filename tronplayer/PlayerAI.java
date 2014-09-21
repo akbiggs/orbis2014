@@ -27,6 +27,9 @@ public class PlayerAI implements Player {
 	@Override
 	public PlayerAction getMove(TronGameBoard map,
 			LightCycle playerCycle, LightCycle opponentCycle, int moveNumber) {
+	
+		if (moveNumber == 1)
+			return PlayerAction.SAME_DIRECTION;
 		
 //		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchableMap grid = new SearchableMap(map, playerCycle, opponentCycle);
