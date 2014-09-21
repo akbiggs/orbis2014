@@ -182,9 +182,6 @@ public class SearchableMap implements TileBasedMap {
 		}
 		
 		return sum;
-=======
-
->>>>>>> 5e1cafd9b01de247fb44b7539716f511f5120cb5
 	}
 	
 	private List<Point> adjacents(int x, int y) {
