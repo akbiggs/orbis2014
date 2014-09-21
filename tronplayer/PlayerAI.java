@@ -38,9 +38,11 @@ public class PlayerAI implements Player {
 		
 		//If the opponent is still alive and the game is not too progressed, head toward their head.
 		Point dest = opponentIntersect(grid, playerCycle, opponentCycle);
+		System.out.println("DEST: " + dest);
 		dest = (!opponentIsDead && dest != null && !grid.blocked(null, dest.x, dest.y) && grid.percentageOfLevelFilled < 0.5) ? 
 				dest : grid.getDestination();
-				
+		System.out.println("DEST 2: " + dest);
+
 		AStarPathFinder pathFinder = new AStarPathFinder(grid, 100, false);
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, dest.x, dest.y);
@@ -48,12 +50,14 @@ public class PlayerAI implements Player {
 		
 		//Where we want to move to
 		final int movetoX, movetoY;
+		boolean usePowerUp = false;
 		
 		if (path == null)
 		{
 			Point bestDest = grid.getBestAdjacantPosTo(playerCycle);
 			movetoX = bestDest.x;
 			movetoY = bestDest.y;
+			usePowerUp = true;
 		}
 		else
 		{
@@ -63,19 +67,19 @@ public class PlayerAI implements Player {
 		}
 		
 		//Choose the action based on where we want to move to
-		PlayerAction actionChosen = PlayerAction.SAME_DIRECTION;
+		PlayerAction actionChosen = usePowerUp ? PlayerAction.ACTIVATE_POWERUP : PlayerAction.SAME_DIRECTION;
 
 		int xDiff = movetoX - playerCycle.getPosition().x;
 		int yDiff = movetoY - playerCycle.getPosition().y;
 		
 		if (xDiff > 0) {
-			actionChosen = PlayerAction.MOVE_RIGHT;
+			actionChosen = usePowerUp ? PlayerAction.ACTIVATE_POWERUP_MOVE_RIGHT : PlayerAction.MOVE_RIGHT;
 		} else if(yDiff < 0) {
-			actionChosen = PlayerAction.MOVE_UP;
+			actionChosen = usePowerUp ? PlayerAction.ACTIVATE_POWERUP_MOVE_UP : PlayerAction.MOVE_UP;
 		} else if (xDiff < 0) {
-			actionChosen = PlayerAction.MOVE_LEFT;
+			actionChosen = usePowerUp ? PlayerAction.ACTIVATE_POWERUP_MOVE_LEFT : PlayerAction.MOVE_LEFT;
 		} else  if (yDiff > 0) {
-			actionChosen = PlayerAction.MOVE_DOWN;
+			actionChosen = usePowerUp ? PlayerAction.ACTIVATE_POWERUP_MOVE_DOWN : PlayerAction.MOVE_DOWN;
 		}
 		
 		return actionChosen;
