@@ -29,7 +29,7 @@ public class PlayerAI implements Player {
 			LightCycle playerCycle, LightCycle opponentCycle, int moveNumber) {
 		
 //		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
-		ValueGrid grid = new ValueGrid(map, playerCycle, opponentCycle);
+		SearchableMap grid = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
 		
 		AStarPathFinder pathFinder = new AStarPathFinder(grid, 30, false);
