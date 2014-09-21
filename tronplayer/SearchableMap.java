@@ -12,13 +12,18 @@ import com.orbischallenge.tron.client.api.TronGameBoard;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
-	private static final int SEARCH_THRESHOLD = 8;
+	private static final int SEARCH_THRESHOLD = 10;
 	private static final int EMPTY_SPACE_WEIGHT = 1;
 	private static final int POWERUP_WEIGHT = 500;
+
 	private static final float POWERUP_FACTOR = 2.5f;
 	private static final float STRAIGHT_FACTOR = 0.95f;
 	private static final float FAR_AWAY_FACTOR = 2.5f;
 	private static final float EMPTY_SPACE_FACTOR = 2f;
+	
+	private static final int CHOOSE_CORNER_THRESHOLD = 100;
+	
+	private static final int CORNER_SIZE = 4;
 
 	ValueMap map;
 	
@@ -105,15 +110,11 @@ public class SearchableMap implements TileBasedMap {
 			}
 
 			// heuristic 2: maximize the amount of squares we are closer to
-			// compared to our opponent?
+			// compared to our opponent
 			float spotsOwned = 0;
 			
 			for (Point p2 : opponentAdjacents) {
 				spotsOwned += getNumberOfBeatableSpotsFrom(p1.x, p1.y, p2.x, p2.y) * FAR_AWAY_FACTOR;
-				
-//				if (spotsOwned < worstSpotsOwned) {
-//					worstSpotsOwned = spotsOwned;
-//				}
 			}
 			
 			double finalValue = spotsOwned + estimatedValue;
@@ -138,6 +139,9 @@ public class SearchableMap implements TileBasedMap {
 		}
 		map.multiplyValue(straightPos.x, straightPos.y, STRAIGHT_FACTOR);
 
+		map.setValue(straightPos.x, straightPos.y, 
+				(int)(map.valueAt(straightPos.x, straightPos.y) * STRAIGHT_FACTOR));
+
 		//Heuristic 4: head toward powerups
 		for (int i = 0; i < playerAdjacents.size(); i++) {
 			Point p1 = playerAdjacents.get(i);
@@ -147,22 +151,61 @@ public class SearchableMap implements TileBasedMap {
 		}
 	}
 	
+	private List<Point> getCorners() {
+		List<Point> corners = new ArrayList<Point>();
+
+		corners.add(new Point(CORNER_SIZE, CORNER_SIZE));
+		corners.add(new Point(map.grid.length - CORNER_SIZE, CORNER_SIZE));
+		corners.add(new Point(CORNER_SIZE, map.grid.length - CORNER_SIZE));
+		corners.add(new Point(map.grid.length - CORNER_SIZE, map.grid.length - CORNER_SIZE));
+		
+		return corners;
+	}
+	
+	private double sumAround(int x, int y, int threshold, List<Point> searched) {
+		Point p = new Point(x, y);
+		for (Point s : searched) {
+			if (s.equals(p)) {
+				return 0;
+			}
+		}
+		
+		double sum = map.valueAt(x, y);
+		if (threshold == 0) {
+			return sum;
+		}
+		
+		List<Point> newSearched = new ArrayList<Point>(searched);
+		newSearched.add(p);
+		
+		List<Point> adjs = adjacents(x, y, false);
+		for (Point p1 : adjs) {
+			sum += sumAround(p1.x, p1.y, threshold-1, newSearched);
+		}
+		
+		return sum;
+	}
+	
 	private List<Point> adjacents(int x, int y) {
+		return adjacents(x, y, true);
+	}
+	
+	private List<Point> adjacents(int x, int y, boolean filter) {
 		List<Point> results = new ArrayList<Point>();
 		
-		if (x > 0 && !blocked(null, x-1, y)) {
+		if (!filter || (x > 0 && !blocked(null, x-1, y))) {
 			results.add(new Point(x-1,y));
 		}
 		
-		if (x < board.length() - 1 && !blocked(null, x+1, y)) {
+		if (!filter || (x < board.length() - 1 && !blocked(null, x+1, y))) {
 			results.add(new Point(x+1,y));
 		}
 		
-		if (y > 0 && !blocked(null, x, y - 1)) {
+		if (!filter || (y > 0 && !blocked(null, x, y - 1))) {
 			results.add(new Point(x,y-1));
 		}
 		
-		if (y < board.length() - 1 && !blocked(null, x, y+1)) {
+		if (!filter || (y < board.length() - 1 && !blocked(null, x, y+1))) {
 			results.add(new Point(x,y+1));
 		}
 		
@@ -238,6 +281,24 @@ public class SearchableMap implements TileBasedMap {
 	}
 	
 	public Point getDestination() {
+			System.out.println("Finding emptiest corner");
+			
+			double emptiestAmount = 0;
+			Point emptiestCorner = null;
+			
+			for (Point p : getCorners()) {
+				double emptySpace = sumAround(p.x, p.y, CORNER_SIZE-1, new ArrayList<Point>());
+				if (emptySpace > emptiestAmount) {
+					emptiestAmount = emptySpace;
+					emptiestCorner = p;
+				}
+			}
+		
+			System.out.println(String.format("Emptiest corner is %d, %d", emptiestCorner.x, emptiestCorner.y));
+			
+			if (emptiestAmount > CHOOSE_CORNER_THRESHOLD) {
+				return emptiestCorner;
+			}
 		return getBestPosition();
 	}
 
