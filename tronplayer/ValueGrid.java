@@ -221,7 +221,6 @@ public class ValueGrid implements TileBasedMap {
 
 	@Override
 	public float getCost(Mover mover, int sx, int sy, int tx, int ty) {
-		// TODO Auto-generated method stub
-		return 1;
+		return at(tx, ty);
 	}
 }

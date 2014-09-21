@@ -33,9 +33,8 @@ public class PlayerAI implements Player {
 		SearchablePlayer searchPlayer = new SearchablePlayer();
 		
 		AStarPathFinder pathFinder = new AStarPathFinder(grid, 30, false);
-		Point target = grid.getBestPosition();
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
-							playerCycle.getPosition().y, target.x, target.y);
+							playerCycle.getPosition().y, 1, 1);
 		
 		Step firstStep = path.getStep(1);
 			
