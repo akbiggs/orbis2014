@@ -21,6 +21,8 @@ public class SearchableMap implements TileBasedMap {
 	private static final float FAR_AWAY_FACTOR = 2f;
 	private static final float EMPTY_SPACE_FACTOR = 2f;
 	
+	private static final int CHOOSE_CORNER_THRESHOLD = 100;
+	
 	private static final int CORNER_SIZE = 4;
 
 	ValueMap map;
@@ -279,23 +281,24 @@ public class SearchableMap implements TileBasedMap {
 	}
 	
 	public Point getDestination() {
-		if (true) {
 			System.out.println("Finding emptiest corner");
 			
-			double emptiestAmount = 10000000;
+			double emptiestAmount = 0;
 			Point emptiestCorner = null;
 			
 			for (Point p : getCorners()) {
 				double emptySpace = sumAround(p.x, p.y, CORNER_SIZE-1, new ArrayList<Point>());
-				if (emptySpace < emptiestAmount) {
+				if (emptySpace > emptiestAmount) {
 					emptiestAmount = emptySpace;
 					emptiestCorner = p;
 				}
 			}
 		
 			System.out.println(String.format("Emptiest corner is %d, %d", emptiestCorner.x, emptiestCorner.y));
-			return emptiestCorner;
-		}
+			
+			if (emptiestAmount > CHOOSE_CORNER_THRESHOLD) {
+				return emptiestCorner;
+			}
 		return getBestPosition();
 	}
 
