@@ -12,6 +12,10 @@ import com.orbischallenge.tron.client.api.TronGameBoard;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
+	private static final int SEARCH_THRESHOLD = 6;
+	private static final int EMPTY_SPACE_WEIGHT = 5;
+	private static final int POWERUP_WEIGHT = 20;
+
 	ValueMap map;
 	
 	public SearchableMap(TronGameBoard board, LightCycle player, LightCycle opponent) {
@@ -25,8 +29,11 @@ public class SearchableMap implements TileBasedMap {
 				
 				if (map.valueAt(i, j) != -1)	
 					continue;
-				
-				if (posType == TileTypeEnum.WALL || posType == TileTypeEnum.LIGHTCYCLE
+			
+				if (posType == TileTypeEnum.POWERUP) {
+					map.setValue(i, j, POWERUP_WEIGHT);
+				}
+				else if (posType == TileTypeEnum.WALL || posType == TileTypeEnum.LIGHTCYCLE
 						|| posType == TileTypeEnum.TRAIL) {
 					map.setValue(i, j, 0);
 					
@@ -39,7 +46,7 @@ public class SearchableMap implements TileBasedMap {
 						map.setValue(i, j+1, 0);
 					}
 				} else {
-					map.setValue(i, j, 1);
+					map.setValue(i, j, EMPTY_SPACE_WEIGHT);
 				}
 			}
 		}
@@ -48,7 +55,8 @@ public class SearchableMap implements TileBasedMap {
 		List<Point> playerAdjacents = adjacents(player.getPosition().x, player.getPosition().y);
 
 		for (Point p1 : playerAdjacents) {
-			if (surrounded(p1.x, p1.y)) {
+			int estimatedValue = estimateValueOf(p1.x, p1.y);
+			if (estimatedValue == 0) {
 				map.setValue(p1.x, p1.y, 0);
 				continue;
 			}
@@ -63,7 +71,7 @@ public class SearchableMap implements TileBasedMap {
 				}
 			}
 			
-			map.setValue(p1.x, p1.y, worstSpotsOwned);
+			map.setValue(p1.x, p1.y, worstSpotsOwned + estimatedValue);
 		}
 		
 		//Going straight should be worth more
@@ -118,35 +126,35 @@ public class SearchableMap implements TileBasedMap {
 		return Math.abs(x1 - x2) + Math.abs(y1 - y2);
 	}
 	
-	public boolean surrounded(int x, int y) {
-		return surrounded(x, y, 4, new ArrayList<Point>());
+	public int estimateValueOf(int x, int y) {
+		return estimateValueOf(x, y, SEARCH_THRESHOLD, new ArrayList<Point>());
 	}
 	
-	public boolean surrounded(int x, int y, int threshold, List<Point> searched) {
+	public int estimateValueOf(int x, int y, int threshold, List<Point> searched) {
 		
 		if (map.valueAt(x, y) == 0) {
-			return true;
+			return 0;
 		}
 		
 		if (threshold == 0) {
-			return false;
+			return map.valueAt(x, y);
 		}
 		
 		List<Point> newSearched = new ArrayList<Point>(searched);
 		newSearched.add(new Point(x, y));
 		
 		List<Point> adjs = adjacents(x, y);
+		int estimatedValue = 0;
+		
 		for (Point p : adjs) {
 			if (searched.contains(p)) {
 				continue;
 			}
 			
-			if (!surrounded(p.x, p.y, threshold-1, newSearched)) {
-				return false;
-			}
+			estimatedValue += estimateValueOf(p.x, p.y, threshold-1, newSearched);
 		}
 		
-		return true;
+		return estimatedValue;
 	}
 	
 	private int getNumberOfBeatableSpotsFrom(int x, int y, int opponentX, int opponentY) {
