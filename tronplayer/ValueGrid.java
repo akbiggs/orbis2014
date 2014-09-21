@@ -53,6 +53,11 @@ public class ValueGrid implements TileBasedMap {
 		List<Point> playerAdjacents = adjacents(player.getPosition().x, player.getPosition().y);
 
 		for (Point p1 : playerAdjacents) {
+			if (surrounded(p1.x, p1.y)) {
+				set(p1.x, p1.y, 0);
+				continue;
+			}
+			
 			int worstSpotsOwned = l*l+1;
 			
 			for (Point p2 : opponentAdjacents) {
@@ -93,6 +98,37 @@ public class ValueGrid implements TileBasedMap {
 		return Math.abs(x1 - x2) + Math.abs(y1 - y2);
 	}
 	
+	public boolean surrounded(int x, int y) {
+		return surrounded(x, y, 4, new ArrayList<Point>());
+	}
+	
+	public boolean surrounded(int x, int y, int threshold, List<Point> searched) {
+		
+		if (at(x, y) == 0) {
+			return true;
+		}
+		
+		if (threshold == 0) {
+			return false;
+		}
+		
+		List<Point> newSearched = new ArrayList<Point>(searched);
+		newSearched.add(new Point(x, y));
+		
+		List<Point> adjs = adjacents(x, y);
+		for (Point p : adjs) {
+			if (searched.contains(p)) {
+				continue;
+			}
+			
+			if (!surrounded(p.x, p.y, threshold-1, newSearched)) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	private int getNumberOfBeatableSpotsFrom(int x, int y, int opponentX, int opponentY) {
 		int numBeatable = 0;
 		
@@ -103,6 +139,7 @@ public class ValueGrid implements TileBasedMap {
 				
 				int playerDistance = manhattenDistance(x, y, i, j);
 				int opponentDistance = manhattenDistance(opponentX, opponentY, i, j);
+				
 				if (playerDistance < opponentDistance) {
 					numBeatable++;
 				}
@@ -135,6 +172,7 @@ public class ValueGrid implements TileBasedMap {
 		for (int i = 0; i < grid.length; i++) {
 			for (int j = 0; j < grid.length; j++) {
 				result.append(at(j, i));
+				result.append(",");
 			}
 			
 			result.append("\n");
