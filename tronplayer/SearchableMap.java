@@ -9,11 +9,13 @@ import path.finding.stuff.TileBasedMap;
 import com.orbischallenge.tron.client.api.LightCycle;
 import com.orbischallenge.tron.client.api.TileTypeEnum;
 import com.orbischallenge.tron.client.api.TronGameBoard;
+import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
-	private static final int SEARCH_THRESHOLD = 6;
+	private static final int SEARCH_THRESHOLD = 9;
 	private static final int EMPTY_SPACE_WEIGHT = 5;
 	private static final int POWERUP_WEIGHT = 20;
+	private static final float STRAIGHT_FACTOR = 1.3f;
 
 	ValueMap map;
 	
@@ -21,7 +23,6 @@ public class SearchableMap implements TileBasedMap {
 		map = new ValueMap(board);
 		
 		int l = map.length();
-		
 		for (int i = 0; i < l; i++) {
 			for (int j = 0; j < l; j++) {
 				TileTypeEnum posType = board.tileType(i, j);
@@ -57,6 +58,8 @@ public class SearchableMap implements TileBasedMap {
 		List<Integer> newValues = new ArrayList<Integer>();
 
 		for (Point p1 : playerAdjacents) {
+			// heuristic 1: BFS around adjacent areas of player to get an idea
+			// of what's around and how valuable/dangerous it is
 			int estimatedValue = estimateValueOf(p1.x, p1.y);
 			newValues.add(estimatedValue);
 		}
@@ -72,6 +75,8 @@ public class SearchableMap implements TileBasedMap {
 				continue;
 			}
 
+			// heuristic 2: in the worst case, how many squares can we be closer to
+			// compared to our opponent?
 			int worstSpotsOwned = l*l+1;
 			
 			for (Point p2 : opponentAdjacents) {
@@ -84,6 +89,23 @@ public class SearchableMap implements TileBasedMap {
 			
 			map.setValue(p1.x, p1.y, estimatedValue + worstSpotsOwned);
 		}
+		
+		// heuristic 3: bias towards going straight, zig-zagging is dangerous
+		Direction dir = player.getDirection();
+		Point pos = player.getPosition();
+		Point straightPos = null;
+		if (dir == Direction.UP) {
+			straightPos = new Point(pos.x, pos.y - 1);
+		} else if (dir == Direction.DOWN) {
+			straightPos = new Point(pos.x, pos.y + 1);
+		} else if (dir == Direction.LEFT) {
+			straightPos = new Point(pos.x - 1, pos.y);
+		} else {
+			straightPos = new Point(pos.x + 1, pos.y);
+		}
+		
+		map.setValue(straightPos.x, straightPos.y, 
+				(int)(map.valueAt(straightPos.x, straightPos.y) * STRAIGHT_FACTOR));
 	}
 	
 	private List<Point> adjacents(int x, int y) {
@@ -133,12 +155,18 @@ public class SearchableMap implements TileBasedMap {
 		int estimatedValue = map.valueAt(x, y);
 		
 		for (Point p : adjs) {
-			if (searched.contains(p)) {
+			boolean skip = false;
+			for (Point s : searched)
+				if (s.equals(p))
+					skip = true;
+
+			if (skip)
 				continue;
-			}
 			
 			estimatedValue += estimateValueOf(p.x, p.y, threshold-1, newSearched);
 		}
+		
+//		System.out.println(String.format("Estimated value of %d, %d: %d", x, y, estimatedValue));
 		
 		return estimatedValue;
 	}
