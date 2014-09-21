@@ -12,23 +12,37 @@ import com.orbischallenge.tron.client.api.TronGameBoard;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
-	private static final int SEARCH_THRESHOLD = 9;
-	private static final int EMPTY_SPACE_WEIGHT = 5;
-	private static final int POWERUP_WEIGHT = 20;
-	private static final float STRAIGHT_FACTOR = 1.3f;
+	private static final int SEARCH_THRESHOLD = 6;
+	private static final int EMPTY_SPACE_WEIGHT = 1;
+	private static final int POWERUP_WEIGHT = 500;
+	private static final float STRAIGHT_FACTOR = 3f;
+	private static final float FAR_AWAY_FACTOR = 2f;
 
 	ValueMap map;
 	
+	TronGameBoard board;
+	
+	public double percentageOfLevelFilled;
+	
 	public SearchableMap(TronGameBoard board, LightCycle player, LightCycle opponent) {
-		map = new ValueMap(board);
+		this.map = new ValueMap(board);
+		this.board = board;
 		
 		int l = map.length();
+		
+		int numEmpties = 0;
+		int numFilled = 0;
+
 		for (int i = 0; i < l; i++) {
 			for (int j = 0; j < l; j++) {
 				TileTypeEnum posType = board.tileType(i, j);
 				
 				if (map.valueAt(i, j) != -1)	
 					continue;
+				
+				if ((new Point(i, j).equals(player.getPosition()))) {
+					map.setValue(i, j, 0);
+				}
 			
 				if (posType == TileTypeEnum.POWERUP) {
 					map.setValue(i, j, POWERUP_WEIGHT);
@@ -55,12 +69,12 @@ public class SearchableMap implements TileBasedMap {
 		List<Point> playerAdjacents = adjacents(player.getPosition().x, player.getPosition().y);
 		
 		// keep track of changed map values separately so they don't affect the BFS
-		List<Integer> newValues = new ArrayList<Integer>();
+		List<Double> newValues = new ArrayList<Double>();
 
 		for (Point p1 : playerAdjacents) {
 			// heuristic 1: BFS around adjacent areas of player to get an idea
 			// of what's around and how valuable/dangerous it is
-			int estimatedValue = estimateValueOf(p1.x, p1.y);
+			double estimatedValue = estimateValueOf(p1.x, p1.y);
 			newValues.add(estimatedValue);
 		}
 			
@@ -68,26 +82,29 @@ public class SearchableMap implements TileBasedMap {
 		for (int i = 0; i < playerAdjacents.size(); i++) {
 			Point p1 = playerAdjacents.get(i);
 
-			Integer estimatedValue = newValues.get(i);
+			Double estimatedValue = newValues.get(i);
 			
-			if (estimatedValue == 0) {
-				map.setValue(p1.x, p1.y, estimatedValue);
+			if (aboutZero(estimatedValue)) {
+				map.setValue(p1.x, p1.y, 1);
 				continue;
 			}
 
-			// heuristic 2: in the worst case, how many squares can we be closer to
+			// heuristic 2: maximize the amount of squares we are closer to
 			// compared to our opponent?
-			int worstSpotsOwned = l*l+1;
+			float spotsOwned = 0;
 			
 			for (Point p2 : opponentAdjacents) {
-				int spotsOwned = getNumberOfBeatableSpotsFrom(p1.x, p1.y, p2.x, p2.y);
+				spotsOwned += getNumberOfBeatableSpotsFrom(p1.x, p1.y, p2.x, p2.y) * FAR_AWAY_FACTOR;
 				
-				if (spotsOwned < worstSpotsOwned) {
-					worstSpotsOwned = spotsOwned;
-				}
+//				if (spotsOwned < worstSpotsOwned) {
+//					worstSpotsOwned = spotsOwned;
+//				}
 			}
 			
-			map.setValue(p1.x, p1.y, estimatedValue + worstSpotsOwned);
+			double finalValue = spotsOwned + estimatedValue;
+			if ( aboutZero(finalValue) && !blocked(null, p1.x, p1.y) )
+				finalValue += 1;
+			map.setValue(p1.x, p1.y, finalValue);
 		}
 		
 		// heuristic 3: bias towards going straight, zig-zagging is dangerous
@@ -103,27 +120,50 @@ public class SearchableMap implements TileBasedMap {
 		} else {
 			straightPos = new Point(pos.x + 1, pos.y);
 		}
-		
+
 		map.setValue(straightPos.x, straightPos.y, 
 				(int)(map.valueAt(straightPos.x, straightPos.y) * STRAIGHT_FACTOR));
 	}
+		
+		//Going straight should be worth more
+//		Direction dir = player.getDirection();
+//		final double multiplier = 2;
+//		switch (dir)
+//		{
+//		case LEFT:
+//		case RIGHT:
+//			for (int y = player.getPosition().y; y < map.length(); y++)
+//				map.multiplyValue(player.getPosition().x, y, multiplier);
+//			for (int y = player.getPosition().y; y >= 0; y--)
+//				map.multiplyValue(player.getPosition().x, y, multiplier);
+//			break;
+//		case DOWN:
+//		case UP:
+//			for (int x = player.getPosition().x; x < map.length(); x++)
+//				map.multiplyValue(x, player.getPosition().y, multiplier);
+//			for (int x = player.getPosition().x; x >= 0; x--)
+//				map.multiplyValue(x, player.getPosition().y, multiplier);
+//			break;
+//		default:
+//			break;
+//		}
 	
 	private List<Point> adjacents(int x, int y) {
 		List<Point> results = new ArrayList<Point>();
 		
-		if (map.valueAt(x-1, y) != 0) {
+		if (x > 0 && !blocked(null, x-1, y)) {
 			results.add(new Point(x-1,y));
 		}
 		
-		if (map.valueAt(x+1, y) != 0) {
+		if (x < board.length() - 1 && !blocked(null, x+1, y)) {
 			results.add(new Point(x+1,y));
 		}
 		
-		if (map.valueAt(x, y-1) != 0) {
+		if (y > 0 && !blocked(null, x, y - 1)) {
 			results.add(new Point(x,y-1));
 		}
 		
-		if (map.valueAt(x, y+1) != 0) {
+		if (y < board.length() - 1 && !blocked(null, x, y+1)) {
 			results.add(new Point(x,y+1));
 		}
 		
@@ -134,13 +174,16 @@ public class SearchableMap implements TileBasedMap {
 		return Math.abs(x1 - x2) + Math.abs(y1 - y2);
 	}
 	
-	public int estimateValueOf(int x, int y) {
-		return estimateValueOf(x, y, SEARCH_THRESHOLD, new ArrayList<Point>());
+	public double estimateValueOf(int x, int y) {
+		double e = estimateValueOf(x, y, SEARCH_THRESHOLD, new ArrayList<Point>());
+		//System.out.println("For (" + x + ", " + y + ") : " + e);
+		
+		return e;
 	}
 	
-	public int estimateValueOf(int x, int y, int threshold, List<Point> searched) {
+	public double estimateValueOf(int x, int y, int threshold, List<Point> searched) {
 		
-		if (map.valueAt(x, y) == 0) {
+		if (aboutZero(map.valueAt(x, y))) {
 			return 0;
 		}
 		
@@ -152,7 +195,7 @@ public class SearchableMap implements TileBasedMap {
 		newSearched.add(new Point(x, y));
 		
 		List<Point> adjs = adjacents(x, y);
-		int estimatedValue = map.valueAt(x, y);
+		double estimatedValue = map.valueAt(x, y);
 		
 		for (Point p : adjs) {
 			boolean skip = false;
@@ -176,14 +219,14 @@ public class SearchableMap implements TileBasedMap {
 		
 		for (int i = 0; i < map.length(); i++) {
 			for (int j = 0; j < map.length(); j++) {
-				if (map.valueAt(i, j) == 0)
+				if (aboutZero(map.valueAt(i, j)))
 					continue;
 				
 				int playerDistance = manhattenDistance(x, y, i, j);
 				int opponentDistance = manhattenDistance(opponentX, opponentY, i, j);
 				
 				if (playerDistance < opponentDistance) {
-					numBeatable++;
+					numBeatable += playerDistance;
 				}
 			}
 		}
@@ -212,7 +255,7 @@ public class SearchableMap implements TileBasedMap {
 	}
 	
 	public Point getBestPosition() {
-		int bestScore = -1;
+		double bestScore = -1;
 		int bestX = 0;
 		int bestY = 0;
 		
@@ -229,6 +272,24 @@ public class SearchableMap implements TileBasedMap {
 		return new Point(bestX, bestY);
 	}
 
+	public Point getBestAdjacantPosTo(LightCycle player)
+	{
+		List<Point> adj = this.adjacents(player.getPosition().x, player.getPosition().y);
+		if (adj.isEmpty())
+			return player.getPosition();
+		
+		Point bestP = adj.get(0);
+		for (Point p : adj)
+		{
+			if (map.valueAt(p.x, p.y) > map.valueAt(bestP.x, bestP.y))
+			{
+				bestP = p;
+			}
+		}
+		
+		return bestP;
+	}
+	
 	@Override
 	public int getWidthInTiles() {
 		return map.length();
@@ -246,23 +307,25 @@ public class SearchableMap implements TileBasedMap {
 
 	@Override
 	public boolean blocked(Mover mover, int x, int y) {
-		return map.valueAt(x, y) == 0;
+		TileTypeEnum posType = board.tileType(x, y);
+		return posType == TileTypeEnum.WALL || posType == TileTypeEnum.LIGHTCYCLE
+				|| posType == TileTypeEnum.TRAIL;
 	}
 
 	@Override
 	public float getCost(Mover mover, int sx, int sy, int tx, int ty) {
-		return map.valueAt(tx, ty);
+		return (new Double(map.valueAt(tx, ty))).floatValue();
 	}
 	
 	private class ValueMap
 	{
-		int[][] grid;
+		double[][] grid;
 		boolean[][] visited;
 		
 		public ValueMap(TronGameBoard board)
 		{
 			int l = board.length();
-			grid = new int[l][l];
+			grid = new double[l][l];
 			visited = new boolean[l][l];
 			
 			for (int i = 0; i < l; i++) {
@@ -270,7 +333,7 @@ public class SearchableMap implements TileBasedMap {
 			}
 		}
 		
-		public int valueAt(int col, int row) {
+		public double valueAt(int col, int row) {
 			if (row < 0 || col < 0 || row >= grid.length || col >= grid.length) {
 				return 0;
 			}
@@ -283,12 +346,25 @@ public class SearchableMap implements TileBasedMap {
 			return grid.length;
 		}
 		
-		public void setValue(int col, int row, int value) {
+		public void multiplyValue(int col, int row, double multiplier) {
 			if (row < 0 || col < 0 || row >= grid.length || col >= grid.length) {
 				return;
 			}
 			
-			grid[row][col] = value;
+			grid[row][col] = grid[row][col] * multiplier;
 		}
+		
+		public void setValue(int col, int row, double d) {
+			if (row < 0 || col < 0 || row >= grid.length || col >= grid.length) {
+				return;
+			}
+			
+			grid[row][col] = d;
+		}
+	}
+	
+	private static boolean aboutZero(double n)
+	{
+		return n < 0.01 && n > -0.01;
 	}
 }

@@ -14,8 +14,9 @@ import com.orbischallenge.tron.protocol.TronProtocol.PowerUpType;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class PlayerAI implements Player {
+	Point lastOpponentPosition;
+	boolean opponentIsDead;
 	
-
 	@Override
 	public void newGame(TronGameBoard map,  
 			LightCycle playerCycle, LightCycle opponentCycle) {
@@ -34,32 +35,99 @@ public class PlayerAI implements Player {
 //		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchableMap grid = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
-		Point dest = grid.getDestination();
 		
-		AStarPathFinder pathFinder = new AStarPathFinder(grid, 30, false);
+		//If the opponent is still alive and the game is not too progressed, head toward their head.
+		Point dest = opponentIntersect(grid, playerCycle, opponentCycle);
+		dest = (!opponentIsDead && dest != null && !grid.blocked(null, dest.x, dest.y) && grid.percentageOfLevelFilled < 0.5) ? 
+				dest : grid.getDestination();
+				
+		AStarPathFinder pathFinder = new AStarPathFinder(grid, 100, false);
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, dest.x, dest.y);
 		
-		Step firstStep = path.getStep(1);
 		
-		int xDiff = firstStep.getX() - playerCycle.getPosition().x;
-		int yDiff = firstStep.getY() - playerCycle.getPosition().y;
+		//Where we want to move to
+		final int movetoX, movetoY;
 		
-		System.out.println(grid);
-		
-		if (xDiff > 0) {
-			return PlayerAction.MOVE_RIGHT;
-		} else if(yDiff < 0) {
-			return PlayerAction.MOVE_UP;
-		} else if (xDiff < 0) {
-			return PlayerAction.MOVE_LEFT;
-		} else  if (yDiff > 0) {
-			return PlayerAction.MOVE_DOWN;
+		if (path == null)
+		{
+			Point bestDest = grid.getBestAdjacantPosTo(playerCycle);
+			movetoX = bestDest.x;
+			movetoY = bestDest.y;
+		}
+		else
+		{
+			Step firstStep = path.getStep(1);
+			movetoX = firstStep.getX();
+			movetoY = firstStep.getY();
 		}
 		
-		return PlayerAction.ACTIVATE_POWERUP;
-	}
+		//Choose the action based on where we want to move to
+		PlayerAction actionChosen = PlayerAction.SAME_DIRECTION;
 
+		int xDiff = movetoX - playerCycle.getPosition().x;
+		int yDiff = movetoY - playerCycle.getPosition().y;
+		
+		if (xDiff > 0) {
+			actionChosen = PlayerAction.MOVE_RIGHT;
+		} else if(yDiff < 0) {
+			actionChosen = PlayerAction.MOVE_UP;
+		} else if (xDiff < 0) {
+			actionChosen = PlayerAction.MOVE_LEFT;
+		} else  if (yDiff > 0) {
+			actionChosen = PlayerAction.MOVE_DOWN;
+		}
+		
+		return actionChosen;
+	}
+	
+	private void checkIfOpponentIsDead(LightCycle opponent)
+	{
+		if (this.lastOpponentPosition.equals(opponent.getPosition()))
+			this.opponentIsDead = true;
+		else
+			this.lastOpponentPosition = opponent.getPosition();
+	}
+	
+	private Point opponentIntersect(SearchableMap map,
+			LightCycle playerCycle, LightCycle opponentCycle)
+	{
+		if (oppositeDirections(playerCycle, opponentCycle))
+		{
+			Point p = opponentCycle.getPosition();
+			
+			Direction od = opponentCycle.getDirection();
+			switch (od)
+			{
+			case DOWN:
+				p.y += 1;
+				break;
+			case LEFT:
+				p.x -= 1;
+				break;
+			case RIGHT:
+				p.x += 1;
+				break;
+			case UP:
+				p.y -= 1;
+				break;
+			}
+			
+			return p;
+		} else {
+			return null;
+		}
+	}
+	
+	private boolean oppositeDirections(LightCycle playerCycle, LightCycle opponentCycle)
+	{
+		Direction pd = playerCycle.getDirection();
+		Direction od = opponentCycle.getDirection();
+		boolean a = (pd == Direction.DOWN || pd == Direction.UP) && (od == Direction.LEFT || od == Direction.RIGHT);
+		boolean b = (od == Direction.DOWN || od == Direction.UP) && (pd == Direction.LEFT || pd == Direction.RIGHT);
+		
+		return a || b;
+	}
 }
 
 /**
