@@ -9,6 +9,7 @@ import path.finding.stuff.TileBasedMap;
 import com.orbischallenge.tron.client.api.LightCycle;
 import com.orbischallenge.tron.client.api.TileTypeEnum;
 import com.orbischallenge.tron.client.api.TronGameBoard;
+import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
 	ValueMap map;
@@ -63,6 +64,31 @@ public class SearchableMap implements TileBasedMap {
 			}
 			
 			map.setValue(p1.x, p1.y, worstSpotsOwned);
+		}
+		
+		//Going straight should be worth more
+		Direction dir = player.getDirection();
+		final double multiplier = 1.1;
+		switch (dir)
+		{
+		case DOWN:
+			for (int y = player.getPosition().y; y < map.length(); y++)
+				map.multiplyValue(player.getPosition().x, y, multiplier);
+			break;
+		case UP:
+			for (int y = player.getPosition().y; y >= 0; y--)
+				map.multiplyValue(player.getPosition().x, y, multiplier);
+			break;
+		case LEFT:
+			for (int x = player.getPosition().x; x < map.length(); x++)
+				map.multiplyValue(x, player.getPosition().y, multiplier);
+			break;
+		case RIGHT:
+			for (int x = player.getPosition().x; x >= 0; x--)
+				map.multiplyValue(x, player.getPosition().y, multiplier);
+			break;
+		default:
+			break;
 		}
 	}
 	
@@ -164,7 +190,7 @@ public class SearchableMap implements TileBasedMap {
 	}
 	
 	public Point getBestPosition() {
-		int bestScore = -1;
+		double bestScore = -1;
 		int bestX = 0;
 		int bestY = 0;
 		
@@ -203,18 +229,18 @@ public class SearchableMap implements TileBasedMap {
 
 	@Override
 	public float getCost(Mover mover, int sx, int sy, int tx, int ty) {
-		return map.valueAt(tx, ty);
+		return (new Double(map.valueAt(tx, ty))).floatValue();
 	}
 	
 	private class ValueMap
 	{
-		int[][] grid;
+		double[][] grid;
 		boolean[][] visited;
 		
 		public ValueMap(TronGameBoard board)
 		{
 			int l = board.length();
-			grid = new int[l][l];
+			grid = new double[l][l];
 			visited = new boolean[l][l];
 			
 			for (int i = 0; i < l; i++) {
@@ -222,7 +248,7 @@ public class SearchableMap implements TileBasedMap {
 			}
 		}
 		
-		public int valueAt(int col, int row) {
+		public double valueAt(int col, int row) {
 			if (row < 0 || col < 0 || row >= grid.length || col >= grid.length) {
 				return 0;
 			}
@@ -235,12 +261,20 @@ public class SearchableMap implements TileBasedMap {
 			return grid.length;
 		}
 		
-		public void setValue(int col, int row, int value) {
+		public void multiplyValue(int col, int row, double multiplier) {
 			if (row < 0 || col < 0 || row >= grid.length || col >= grid.length) {
 				return;
 			}
 			
-			grid[row][col] = value;
+			grid[row][col] = grid[row][col] * multiplier;
+		}
+		
+		public void setValue(int col, int row, double d) {
+			if (row < 0 || col < 0 || row >= grid.length || col >= grid.length) {
+				return;
+			}
+			
+			grid[row][col] = d;
 		}
 	}
 }
