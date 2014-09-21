@@ -52,14 +52,26 @@ public class SearchableMap implements TileBasedMap {
 		
 		List<Point> opponentAdjacents = adjacents(opponent.getPosition().x, opponent.getPosition().y);
 		List<Point> playerAdjacents = adjacents(player.getPosition().x, player.getPosition().y);
+		
+		// keep track of changed map values separately so they don't affect the BFS
+		List<Integer> newValues = new ArrayList<Integer>();
 
 		for (Point p1 : playerAdjacents) {
 			int estimatedValue = estimateValueOf(p1.x, p1.y);
+			newValues.add(estimatedValue);
+		}
+			
+		// now flush changes to adjacents on to map
+		for (int i = 0; i < playerAdjacents.size(); i++) {
+			Point p1 = playerAdjacents.get(i);
+
+			Integer estimatedValue = newValues.get(i);
+			
 			if (estimatedValue == 0) {
-				map.setValue(p1.x, p1.y, 0);
+				map.setValue(p1.x, p1.y, estimatedValue);
 				continue;
 			}
-			
+
 			int worstSpotsOwned = l*l+1;
 			
 			for (Point p2 : opponentAdjacents) {
@@ -70,7 +82,7 @@ public class SearchableMap implements TileBasedMap {
 				}
 			}
 			
-			map.setValue(p1.x, p1.y, worstSpotsOwned + estimatedValue);
+			map.setValue(p1.x, p1.y, estimatedValue + worstSpotsOwned);
 		}
 	}
 	
@@ -118,7 +130,7 @@ public class SearchableMap implements TileBasedMap {
 		newSearched.add(new Point(x, y));
 		
 		List<Point> adjs = adjacents(x, y);
-		int estimatedValue = 0;
+		int estimatedValue = map.valueAt(x, y);
 		
 		for (Point p : adjs) {
 			if (searched.contains(p)) {
