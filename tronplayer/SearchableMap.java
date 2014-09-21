@@ -138,7 +138,7 @@ public class SearchableMap implements TileBasedMap {
 	
 	public double estimateValueOf(int x, int y) {
 		double e = estimateValueOf(x, y, SEARCH_THRESHOLD, new ArrayList<Point>());
-		System.out.println("For (" + x + ", " + y + ") : " + e);
+		//System.out.println("For (" + x + ", " + y + ") : " + e);
 		
 		return e;
 	}

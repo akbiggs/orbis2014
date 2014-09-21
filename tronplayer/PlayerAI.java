@@ -14,8 +14,9 @@ import com.orbischallenge.tron.protocol.TronProtocol.PowerUpType;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class PlayerAI implements Player {
-	Point lastPlayerPosition;
-
+	Point lastOpponentPosition;
+	boolean opponentIsDead;
+	
 	@Override
 	public void newGame(TronGameBoard map,  
 			LightCycle playerCycle, LightCycle opponentCycle) {
@@ -31,12 +32,12 @@ public class PlayerAI implements Player {
 //		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchableMap grid = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
-		Point dest = grid.getDestination();//opponentIntersect(grid, playerCycle, opponentCycle);
-		//dest = (dest != null && !grid.blocked(null, dest.x, dest.y) && grid.percentageOfLevelFilled < 0.5) ? 
-		//		dest : grid.getDestination();
 		
-		System.out.println("Grid " + grid);
-		
+		//If the opponent is still alive and the game is not too progressed, head toward their head.
+		Point dest = opponentIntersect(grid, playerCycle, opponentCycle);
+		dest = (!opponentIsDead && dest != null && !grid.blocked(null, dest.x, dest.y) && grid.percentageOfLevelFilled < 0.5) ? 
+				dest : grid.getDestination();
+				
 		AStarPathFinder pathFinder = new AStarPathFinder(grid, 100, false);
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, dest.x, dest.y);
@@ -74,8 +75,15 @@ public class PlayerAI implements Player {
 			actionChosen = PlayerAction.MOVE_DOWN;
 		}
 		
-		System.out.println(actionChosen);
 		return actionChosen;
+	}
+	
+	private void checkIfOpponentIsDead(LightCycle opponent)
+	{
+		if (this.lastOpponentPosition.equals(opponent.getPosition()))
+			this.opponentIsDead = true;
+		else
+			this.lastOpponentPosition = opponent.getPosition();
 	}
 	
 	private Point opponentIntersect(SearchableMap map,
