@@ -69,12 +69,19 @@ public class PlayerAI implements Player {
 		}
 		
 		//If it is likely we are going to get a new powerup, should go ahead and use the old one.
-		if (playerCycle.getPowerup() != null && grid.distanceToNearestPowerup <= 2)
+		if (playerCycle.getPowerup() != null && grid.distanceToNearestPowerup <= 1)
 			usePowerUp = true;
+		
+		//If the powerup doesn't destroy things, use it immediately
+		if (playerCycle.getPowerup() == PowerUpType.BONUSPOINTS || 
+				playerCycle.getPowerup() == PowerUpType.SPEED) {
+			usePowerUp = true;
+		}
 		
 		//Choose the action based on where we want to move to
 		PlayerAction actionChosen = usePowerUp ? PlayerAction.ACTIVATE_POWERUP : PlayerAction.SAME_DIRECTION;
 
+		
 		int xDiff = movetoX - playerCycle.getPosition().x;
 		int yDiff = movetoY - playerCycle.getPosition().y;
 		

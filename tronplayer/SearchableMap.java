@@ -16,8 +16,8 @@ public class SearchableMap implements TileBasedMap {
 	private static final int EMPTY_SPACE_WEIGHT = 1;
 	private static final int POWERUP_WEIGHT = 500;
 	private static final float POWERUP_FACTOR = 2.5f;
-	private static final float STRAIGHT_FACTOR = 1f;
-	private static final float FAR_AWAY_FACTOR = 2f;
+	private static final float STRAIGHT_FACTOR = 0.95f;
+	private static final float FAR_AWAY_FACTOR = 2.5f;
 	private static final float EMPTY_SPACE_FACTOR = 2f;
 
 	ValueMap map;
