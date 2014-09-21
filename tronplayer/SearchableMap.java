@@ -85,6 +85,7 @@ public class SearchableMap implements TileBasedMap {
 			// heuristic 1: BFS around adjacent areas of player to get an idea
 			// of what's around and how valuable/dangerous it is
 			double estimatedValue = estimateValueOf(p1.x, p1.y);
+			System.out.println(String.format("Estimated value of %d,%d: %.2f", p1.x, p1.y, estimatedValue));
 			newValues.add(estimatedValue);
 		}
 			
@@ -211,7 +212,9 @@ public class SearchableMap implements TileBasedMap {
 		newSearched.add(new Point(x, y));
 		
 		List<Point> adjs = adjacents(x, y);
-		double estimatedValue = map.valueAt(x, y);
+		
+		double initialValue = map.valueAt(x, y);
+		double estimatedValue = initialValue;
 		
 		for (Point p : adjs) {
 			boolean skip = false;
@@ -225,7 +228,9 @@ public class SearchableMap implements TileBasedMap {
 			estimatedValue += estimateValueOf(p.x, p.y, threshold-1, newSearched);
 		}
 		
-//		System.out.println(String.format("Estimated value of %d, %d: %d", x, y, estimatedValue));
+		if (estimatedValue == initialValue) {
+			return 0;
+		}
 		
 		return estimatedValue;
 	}
@@ -260,7 +265,7 @@ public class SearchableMap implements TileBasedMap {
 		
 		for (int i = 0; i < map.length(); i++) {
 			for (int j = 0; j < map.length(); j++) {
-				result.append(map.valueAt(j, i));
+				result.append((int)map.valueAt(j, i));
 				result.append(",");
 			}
 			
