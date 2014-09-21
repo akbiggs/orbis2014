@@ -66,6 +66,10 @@ public class PlayerAI implements Player {
 			movetoY = firstStep.getY();
 		}
 		
+		//If it is likely we are going to get a new powerup, should go ahead and use the old one.
+		if (playerCycle.getPowerup() != null && grid.distanceToNearestPowerup <= 2)
+			usePowerUp = true;
+		
 		//Choose the action based on where we want to move to
 		PlayerAction actionChosen = usePowerUp ? PlayerAction.ACTIVATE_POWERUP : PlayerAction.SAME_DIRECTION;
 

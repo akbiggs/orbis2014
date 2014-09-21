@@ -12,7 +12,7 @@ import com.orbischallenge.tron.client.api.TronGameBoard;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
-	private static final int SEARCH_THRESHOLD = 6;
+	private static final int SEARCH_THRESHOLD = 8;
 	private static final int EMPTY_SPACE_WEIGHT = 1;
 	private static final int POWERUP_WEIGHT = 500;
 	private static final float STRAIGHT_FACTOR = 3f;
@@ -23,7 +23,8 @@ public class SearchableMap implements TileBasedMap {
 	TronGameBoard board;
 	
 	public double percentageOfLevelFilled;
-	//public int distanceToNear;//
+	public int distanceToNearestPowerup = Integer.MAX_VALUE;
+	
 	public SearchableMap(TronGameBoard board, LightCycle player, LightCycle opponent) {
 		this.map = new ValueMap(board);
 		this.board = board;
@@ -47,6 +48,9 @@ public class SearchableMap implements TileBasedMap {
 				if (posType == TileTypeEnum.POWERUP) {
 					map.setValue(i, j, POWERUP_WEIGHT);
 					numEmpties++;
+					
+					this.distanceToNearestPowerup = Math.min(this.distanceToNearestPowerup,
+							this.manhattenDistance(i, j, player.getPosition().x, player.getPosition().y));
 				}
 				else if (posType == TileTypeEnum.WALL || posType == TileTypeEnum.LIGHTCYCLE
 						|| posType == TileTypeEnum.TRAIL) {
