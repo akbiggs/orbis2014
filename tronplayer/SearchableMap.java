@@ -143,6 +143,10 @@ public class SearchableMap implements TileBasedMap {
 		return numBeatable;
 	}
 	
+	public Point getDestination() {
+		return getBestPosition();
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder();

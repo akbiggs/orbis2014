@@ -31,13 +31,14 @@ public class PlayerAI implements Player {
 //		SearchableMap searchMap = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchableMap grid = new SearchableMap(map, playerCycle, opponentCycle);
 		SearchablePlayer searchPlayer = new SearchablePlayer();
+		Point dest = grid.getDestination();
 		
 		AStarPathFinder pathFinder = new AStarPathFinder(grid, 30, false);
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
-							playerCycle.getPosition().y, 1, 1);
+							playerCycle.getPosition().y, dest.x, dest.y);
 		
 		Step firstStep = path.getStep(1);
-			
+		
 		int xDiff = firstStep.getX() - playerCycle.getPosition().x;
 		int yDiff = firstStep.getY() - playerCycle.getPosition().y;
 		
