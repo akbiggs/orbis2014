@@ -15,9 +15,12 @@ public class SearchableMap implements TileBasedMap {
 	private static final int SEARCH_THRESHOLD = 10;
 	private static final int EMPTY_SPACE_WEIGHT = 1;
 	private static final int POWERUP_WEIGHT = 500;
+
+	private static final float POWERUP_FACTOR = 2.5f;
 	private static final float STRAIGHT_FACTOR = 1f;
-	private static final float FAR_AWAY_FACTOR = 4f;
-	private static final float EMPTY_CORNER_FACTOR = 0.5f;
+	private static final float FAR_AWAY_FACTOR = 2f;
+	private static final float EMPTY_SPACE_FACTOR = 2f;
+	
 	private static final int CORNER_SIZE = 4;
 
 	ValueMap map;
@@ -90,7 +93,9 @@ public class SearchableMap implements TileBasedMap {
 			System.out.println(String.format("Estimated value of %d,%d: %.2f", p1.x, p1.y, estimatedValue));
 			newValues.add(estimatedValue);
 		}
-			
+		
+		int maxValue = 0;
+		
 		// now flush changes to adjacents on to map
 		for (int i = 0; i < playerAdjacents.size(); i++) {
 			Point p1 = playerAdjacents.get(i);
@@ -114,11 +119,6 @@ public class SearchableMap implements TileBasedMap {
 			if ( aboutZero(finalValue) && !blocked(null, p1.x, p1.y) )
 				finalValue += 1;
 			
-			//This is a hack
-			if (board.tileType(p1.x, p1.y) == TileTypeEnum.POWERUP) {
-				finalValue *= 10;
-			}
-			
 			map.setValue(p1.x, p1.y, finalValue);
 		}
 		
@@ -135,27 +135,18 @@ public class SearchableMap implements TileBasedMap {
 		} else {
 			straightPos = new Point(pos.x + 1, pos.y);
 		}
+		map.multiplyValue(straightPos.x, straightPos.y, STRAIGHT_FACTOR);
 
 		map.setValue(straightPos.x, straightPos.y, 
 				(int)(map.valueAt(straightPos.x, straightPos.y) * STRAIGHT_FACTOR));
-		
-		// heuristic 4: tend towards the corner of the map with the most empty space
-//		List<Point> corners = getCorners();
-//		for (Point adj : playerAdjacents) {
-//			Point closestCorner = null;
-//			int closestDistance = 0; //manhattenDistance(adj.x, adj.y, closestCorner.x, closestCorner.y);
-//			
-//			for (Point corner : corners) {
-//				int distance = manhattenDistance(adj.x, adj.y, corner.x, corner.y);
-//				if (closestCorner == null || distance < closestDistance) {
-//					closestCorner = corner;
-//					closestDistance = distance;
-//				}
-//			}
-//			
-//			double amountOfFreeSpace = sumAround(closestCorner.x, closestCorner.y, CORNER_SIZE-1, new ArrayList<Point>());
-//			map.setValue(adj.x, adj.y, amountOfFreeSpace * EMPTY_CORNER_FACTOR);
-//		}
+
+		//Heuristic 4: head toward powerups
+		for (int i = 0; i < playerAdjacents.size(); i++) {
+			Point p1 = playerAdjacents.get(i);
+			
+			if (board.tileType(p1.x,  p1.y) == TileTypeEnum.POWERUP)
+				map.multiplyValue(p1.x, p1.y, POWERUP_FACTOR);
+		}
 	}
 	
 	private List<Point> getCorners() {
@@ -191,30 +182,10 @@ public class SearchableMap implements TileBasedMap {
 		}
 		
 		return sum;
+=======
+
+>>>>>>> 5e1cafd9b01de247fb44b7539716f511f5120cb5
 	}
-		
-		//Going straight should be worth more
-//		Direction dir = player.getDirection();
-//		final double multiplier = 2;
-//		switch (dir)
-//		{
-//		case LEFT:
-//		case RIGHT:
-//			for (int y = player.getPosition().y; y < map.length(); y++)
-//				map.multiplyValue(player.getPosition().x, y, multiplier);
-//			for (int y = player.getPosition().y; y >= 0; y--)
-//				map.multiplyValue(player.getPosition().x, y, multiplier);
-//			break;
-//		case DOWN:
-//		case UP:
-//			for (int x = player.getPosition().x; x < map.length(); x++)
-//				map.multiplyValue(x, player.getPosition().y, multiplier);
-//			for (int x = player.getPosition().x; x >= 0; x--)
-//				map.multiplyValue(x, player.getPosition().y, multiplier);
-//			break;
-//		default:
-//			break;
-//		}
 	
 	private List<Point> adjacents(int x, int y) {
 		return adjacents(x, y, true);
