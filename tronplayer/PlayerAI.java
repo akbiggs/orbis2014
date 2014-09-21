@@ -37,31 +37,74 @@ public class PlayerAI implements Player {
 		Path path = pathFinder.findPath(searchPlayer, playerCycle.getPosition().x,
 							playerCycle.getPosition().y, dest.x, dest.y);
 		
-		if (path == null)
+		//System.out.println("PATH: " + path);
+		//System.out.println("dest: " + dest);
+		PlayerAction actionChosen = PlayerAction.SAME_DIRECTION;
+		if (path != null)
 		{
-			return PlayerAction.SAME_DIRECTION;
+			Step firstStep = path.getStep(1);
+			
+			int xDiff = firstStep.getX() - playerCycle.getPosition().x;
+			int yDiff = firstStep.getY() - playerCycle.getPosition().y;
+			
+			//System.out.println(grid);
+			
+			if (xDiff > 0) {
+				actionChosen = PlayerAction.MOVE_RIGHT;
+			} else if(yDiff < 0) {
+				actionChosen = PlayerAction.MOVE_UP;
+			} else if (xDiff < 0) {
+				actionChosen = PlayerAction.MOVE_LEFT;
+			} else  if (yDiff > 0) {
+				actionChosen = PlayerAction.MOVE_DOWN;
+			}
+			
+			//System.out.println("GOAL: " + dest);
+			//System.out.println("ACTION CHOSEN: " + actionChosen);
 		}
 		
-		Step firstStep = path.getStep(1);
-		
-		int xDiff = firstStep.getX() - playerCycle.getPosition().x;
-		int yDiff = firstStep.getY() - playerCycle.getPosition().y;
-		
-		System.out.println(grid);
-		
-		if (xDiff > 0) {
-			return PlayerAction.MOVE_RIGHT;
-		} else if(yDiff < 0) {
-			return PlayerAction.MOVE_UP;
-		} else if (xDiff < 0) {
-			return PlayerAction.MOVE_LEFT;
-		} else  if (yDiff > 0) {
-			return PlayerAction.MOVE_DOWN;
-		}
-		
-		return PlayerAction.ACTIVATE_POWERUP;
+		return actionChosen;
 	}
-
+	
+	private Point opponentIntersect(SearchableMap map,
+			LightCycle playerCycle, LightCycle opponentCycle)
+	{
+		if (oppositeDirections(playerCycle, opponentCycle))
+		{
+			Point p = opponentCycle.getPosition();
+			
+			Direction od = opponentCycle.getDirection();
+			switch (od)
+			{
+			case DOWN:
+				p.y += 1;
+				break;
+			case LEFT:
+				p.x -= 1;
+				break;
+			case RIGHT:
+				p.x += 1;
+				break;
+			case UP:
+				p.y -= 1;
+				break;
+			}
+			
+			return !map.blocked(null, p.x, p.y) ? p : null;
+		} else {
+			return null;
+		}
+	}
+	
+	private boolean oppositeDirections(LightCycle playerCycle, LightCycle opponentCycle)
+	{
+		Direction pd = playerCycle.getDirection();
+		Direction od = opponentCycle.getDirection();
+		boolean a = (pd == Direction.DOWN || pd == Direction.UP) && (od == Direction.LEFT || od == Direction.RIGHT);
+		boolean b = (od == Direction.DOWN || od == Direction.UP) && (pd == Direction.LEFT || pd == Direction.RIGHT);
+		
+		return a || b;
+	}
 }
 
 /**

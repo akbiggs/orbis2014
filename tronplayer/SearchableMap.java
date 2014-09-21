@@ -13,7 +13,7 @@ import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
 	private static final int SEARCH_THRESHOLD = 6;
-	private static final int EMPTY_SPACE_WEIGHT = 5;
+	private static final int EMPTY_SPACE_WEIGHT = 1;
 	private static final int POWERUP_WEIGHT = 20;
 
 	ValueMap map;
@@ -55,8 +55,8 @@ public class SearchableMap implements TileBasedMap {
 		List<Point> playerAdjacents = adjacents(player.getPosition().x, player.getPosition().y);
 
 		for (Point p1 : playerAdjacents) {
-			int estimatedValue = estimateValueOf(p1.x, p1.y);
-			if (estimatedValue == 0) {
+			double estimatedValue = estimateValueOf(p1.x, p1.y);
+			if (aboutZero(estimatedValue)) {
 				map.setValue(p1.x, p1.y, 0);
 				continue;
 			}
@@ -75,29 +75,27 @@ public class SearchableMap implements TileBasedMap {
 		}
 		
 		//Going straight should be worth more
-		Direction dir = player.getDirection();
-		final double multiplier = 1.1;
-		switch (dir)
-		{
-		case DOWN:
-			for (int y = player.getPosition().y; y < map.length(); y++)
-				map.multiplyValue(player.getPosition().x, y, multiplier);
-			break;
-		case UP:
-			for (int y = player.getPosition().y; y >= 0; y--)
-				map.multiplyValue(player.getPosition().x, y, multiplier);
-			break;
-		case LEFT:
-			for (int x = player.getPosition().x; x < map.length(); x++)
-				map.multiplyValue(x, player.getPosition().y, multiplier);
-			break;
-		case RIGHT:
-			for (int x = player.getPosition().x; x >= 0; x--)
-				map.multiplyValue(x, player.getPosition().y, multiplier);
-			break;
-		default:
-			break;
-		}
+//		Direction dir = player.getDirection();
+//		final double multiplier = 2;
+//		switch (dir)
+//		{
+//		case LEFT:
+//		case RIGHT:
+//			for (int y = player.getPosition().y; y < map.length(); y++)
+//				map.multiplyValue(player.getPosition().x, y, multiplier);
+//			for (int y = player.getPosition().y; y >= 0; y--)
+//				map.multiplyValue(player.getPosition().x, y, multiplier);
+//			break;
+//		case DOWN:
+//		case UP:
+//			for (int x = player.getPosition().x; x < map.length(); x++)
+//				map.multiplyValue(x, player.getPosition().y, multiplier);
+//			for (int x = player.getPosition().x; x >= 0; x--)
+//				map.multiplyValue(x, player.getPosition().y, multiplier);
+//			break;
+//		default:
+//			break;
+//		}
 	}
 	
 	private List<Point> adjacents(int x, int y) {
@@ -126,13 +124,13 @@ public class SearchableMap implements TileBasedMap {
 		return Math.abs(x1 - x2) + Math.abs(y1 - y2);
 	}
 	
-	public int estimateValueOf(int x, int y) {
+	public double estimateValueOf(int x, int y) {
 		return estimateValueOf(x, y, SEARCH_THRESHOLD, new ArrayList<Point>());
 	}
 	
-	public int estimateValueOf(int x, int y, int threshold, List<Point> searched) {
+	public double estimateValueOf(int x, int y, int threshold, List<Point> searched) {
 		
-		if (map.valueAt(x, y) == 0) {
+		if (aboutZero(map.valueAt(x, y))) {
 			return 0;
 		}
 		
@@ -162,7 +160,7 @@ public class SearchableMap implements TileBasedMap {
 		
 		for (int i = 0; i < map.length(); i++) {
 			for (int j = 0; j < map.length(); j++) {
-				if (map.valueAt(i, j) == 0)
+				if (aboutZero(map.valueAt(i, j)))
 					continue;
 				
 				int playerDistance = manhattenDistance(x, y, i, j);
@@ -232,7 +230,7 @@ public class SearchableMap implements TileBasedMap {
 
 	@Override
 	public boolean blocked(Mover mover, int x, int y) {
-		return map.valueAt(x, y) == 0;
+		return aboutZero(map.valueAt(x, y));
 	}
 
 	@Override
@@ -284,5 +282,10 @@ public class SearchableMap implements TileBasedMap {
 			
 			grid[row][col] = d;
 		}
+	}
+	
+	private static boolean aboutZero(double n)
+	{
+		return n < 0.01 && n > -0.01;
 	}
 }
