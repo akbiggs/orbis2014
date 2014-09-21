@@ -12,7 +12,7 @@ import com.orbischallenge.tron.client.api.TronGameBoard;
 import com.orbischallenge.tron.protocol.TronProtocol.Direction;
 
 public class SearchableMap implements TileBasedMap {
-	private static final int SEARCH_THRESHOLD = 6;
+	private static final int SEARCH_THRESHOLD = 8;
 	private static final int EMPTY_SPACE_WEIGHT = 1;
 	private static final int POWERUP_WEIGHT = 500;
 	private static final float STRAIGHT_FACTOR = 3f;
@@ -23,6 +23,7 @@ public class SearchableMap implements TileBasedMap {
 	TronGameBoard board;
 	
 	public double percentageOfLevelFilled;
+	public int distanceToNearestPowerup = Integer.MAX_VALUE;
 	
 	public SearchableMap(TronGameBoard board, LightCycle player, LightCycle opponent) {
 		this.map = new ValueMap(board);
@@ -46,6 +47,10 @@ public class SearchableMap implements TileBasedMap {
 			
 				if (posType == TileTypeEnum.POWERUP) {
 					map.setValue(i, j, POWERUP_WEIGHT);
+					numEmpties++;
+					
+					this.distanceToNearestPowerup = Math.min(this.distanceToNearestPowerup,
+							this.manhattenDistance(i, j, player.getPosition().x, player.getPosition().y));
 				}
 				else if (posType == TileTypeEnum.WALL || posType == TileTypeEnum.LIGHTCYCLE
 						|| posType == TileTypeEnum.TRAIL) {
@@ -59,11 +64,16 @@ public class SearchableMap implements TileBasedMap {
 						map.setValue(i+1, j, 0);
 						map.setValue(i, j+1, 0);
 					}
+					
+					numFilled++;
 				} else {
 					map.setValue(i, j, EMPTY_SPACE_WEIGHT);
+					numEmpties++;
 				}
 			}
 		}
+		
+		this.percentageOfLevelFilled = (double) numEmpties + (numEmpties + numFilled);
 		
 		List<Point> opponentAdjacents = adjacents(opponent.getPosition().x, opponent.getPosition().y);
 		List<Point> playerAdjacents = adjacents(player.getPosition().x, player.getPosition().y);
@@ -105,6 +115,12 @@ public class SearchableMap implements TileBasedMap {
 			double finalValue = spotsOwned + estimatedValue;
 			if ( aboutZero(finalValue) && !blocked(null, p1.x, p1.y) )
 				finalValue += 1;
+			
+			//This is a hack
+			if (board.tileType(p1.x, p1.y) == TileTypeEnum.POWERUP) {
+				finalValue *= 10;
+			}
+			
 			map.setValue(p1.x, p1.y, finalValue);
 		}
 		
